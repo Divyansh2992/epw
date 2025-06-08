@@ -1,8 +1,12 @@
 const express=require("express");
+const cors = require("cors");
 const app=express();
 const fs = require('fs');
 const path = require('path');
 const epwRoutes = require('./routes/epw');
+
+// Enable CORS for all origins
+app.use(cors());
 
 app.use('/api/epw', epwRoutes);
 

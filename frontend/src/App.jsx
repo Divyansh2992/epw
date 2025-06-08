@@ -1,58 +1,36 @@
-import React, { useEffect, useRef } from 'react';
-import * as d3 from 'd3';
-import { feature } from 'topojson-client';
+import React, { useState } from 'react';
+import SummaryTable from './SummaryTable';
+import IndiaMap from './IndiaMap';
+import TemperatureViolinPlot from './TemperatureViolinPlot';
+import RadiationViolinPlot from './RadiationViolinPlot';
+import WindVelocityViolinPlot from './WindVelocityViolinPlot';
 
 function App() {
-  const svgRef = useRef();
+  const [popup, setPopup] = useState({ visible: false, district: '', summary: null });
+  const [activeTab, setActiveTab] = useState('summary');
+  const [activeSubTab, setActiveSubTab] = useState('temperature');
 
-  useEffect(() => {
-    // Load the TopoJSON data
-    d3.json('/india.json').then((topology) => {
-      // Use the correct object key from india.json
-      const india = feature(topology, topology.objects.districts);
-      const width = 800;
-      const height = 900;
-
-      const projection = d3.geoMercator()
-        .fitSize([width, height], india);
-      const path = d3.geoPath().projection(projection);
-
-      const svg = d3.select(svgRef.current)
-        .attr('width', width)
-        .attr('height', height);
-
-      svg.selectAll('path')
-        .data(india.features)
-        .join('path')
-        .attr('d', path)
-        .attr('fill', '#b3d1ff')
-        .attr('stroke', '#333')
-        .on('mouseover', function (event, d) {
-          d3.select(this).attr('fill', '#ffcc00');
-          // Show tooltip
-          const [x, y] = d3.pointer(event, svg.node());
-          d3.select('#tooltip')
-            .style('left', `${x + 20}px`)
-            .style('top', `${y + 20}px`)
-            .style('display', 'block')
-            .text(d.properties.district);
-        })
-        .on('mousemove', function (event) {
-          const [x, y] = d3.pointer(event, svg.node());
-          d3.select('#tooltip')
-            .style('left', `${x + 20}px`)
-            .style('top', `${y + 20}px`);
-        })
-        .on('mouseout', function () {
-          d3.select(this).attr('fill', '#b3d1ff');
-          d3.select('#tooltip').style('display', 'none');
-        });
-    });
-  }, []);
+  const handleDistrictClick = (district) => {
+    fetch(`/api/epw/summary/district/${encodeURIComponent(district)}`)
+      .then(async res => {
+        if (!res.ok) {
+          throw new Error('Not found');
+        }
+        const data = await res.json();
+        if (!data.summary) {
+          throw new Error('No summary');
+        }
+        setPopup({ visible: true, district, summary: data.summary });
+      })
+      .catch((err) => {
+        console.error('EPW fetch error:', err);
+        setPopup({ visible: true, district, summary: null });
+      });
+  };
 
   return (
-    <div style={{ position: 'relative' }}>
-      <svg ref={svgRef}></svg>
+    <div style={{ position: 'relative', background: '#f5f5f5', minHeight: '100vh', padding: 32 }}>
+      <IndiaMap onDistrictClick={handleDistrictClick} />
       <div id="tooltip" style={{
         position: 'absolute',
         display: 'none',
@@ -64,6 +42,163 @@ function App() {
         fontSize: '14px',
         zIndex: 10
       }}></div>
+      {popup.visible && (
+        <div style={{
+          position: 'fixed',
+          top: 0, left: 0, right: 0, bottom: 0,
+          background: 'rgba(0,0,0,0.25)',
+          display: 'flex',
+          alignItems: 'center',
+          justifyContent: 'center',
+          zIndex: 1000,
+          padding: '32px',
+          boxSizing: 'border-box',
+        }} onClick={() => setPopup({ ...popup, visible: false })}>
+          <div style={{
+            background: '#fff',
+            borderRadius: 12,
+            padding: 0,
+            width: '95%',
+            maxWidth: 1200,
+            maxHeight: '90vh',
+            boxShadow: '0 8px 32px rgba(0,0,0,0.12)',
+            position: 'relative',
+            cursor: 'auto',
+            border: '1px solid #e0e6ef',
+            display: 'flex',
+            flexDirection: 'column',
+            boxSizing: 'border-box',
+            fontSize: 15,
+          }} onClick={e => e.stopPropagation()}>
+            {/* Top Tabs */}
+            <div style={{
+              borderBottom: '1px solid #e0e6ef',
+              padding: '0 24px',
+              display: 'flex',
+              gap: 24,
+              userSelect: 'none',
+            }}>
+              {['Weather File Summary', 'Range Plots'].map((tab, i) => (
+                <div
+                  key={i}
+                  onClick={() => { setActiveTab(i === 0 ? 'summary' : 'range'); }}
+                  style={{
+                    padding: '16px 8px',
+                    cursor: 'pointer',
+                    color: activeTab === (i === 0 ? 'summary' : 'range') ? '#000' : '#666',
+                    borderBottom: `2px solid ${activeTab === (i === 0 ? 'summary' : 'range') ? '#007AFF' : 'transparent'}`,
+                    transition: 'all 0.2s',
+                    fontWeight: activeTab === (i === 0 ? 'summary' : 'range') ? 500 : 400,
+                  }}
+                >
+                  {tab}
+                </div>
+              ))}
+            </div>
+            {/* Content */}
+            <div style={{
+              padding: 24,
+              overflowY: 'auto',
+              flex: 1,
+              minHeight: 0,
+              position: 'relative',
+            }}>
+              {activeTab === 'summary' ? (
+                popup.summary ? (
+                  <SummaryTable summary={popup.summary} district={popup.district} />
+                ) : (
+                  <div style={{color:'red',padding:16}}>No EPW data found for {popup.district}</div>
+                )
+              ) : (
+                <>
+                  <div style={{ display: 'flex', gap: 0, marginBottom: 12 }}>
+                    <div
+                      onClick={() => setActiveSubTab('temperature')}
+                      style={{
+                        padding: '6px 24px 6px 0',
+                        fontWeight: 600,
+                        fontSize: 15,
+                        borderBottom: activeSubTab === 'temperature' ? '2px solid #1976d2' : '2px solid transparent',
+                        color: activeSubTab === 'temperature' ? '#1976d2' : '#222',
+                        cursor: 'pointer',
+                        marginRight: 8,
+                        background: 'none',
+                        minWidth: 80,
+                      }}
+                    >
+                      Temperature Range
+                    </div>
+                    <div
+                      onClick={() => setActiveSubTab('radiation')}
+                      style={{
+                        padding: '6px 24px 6px 0',
+                        fontWeight: 600,
+                        fontSize: 15,
+                        borderBottom: activeSubTab === 'radiation' ? '2px solid #1976d2' : '2px solid transparent',
+                        color: activeSubTab === 'radiation' ? '#1976d2' : '#222',
+                        cursor: 'pointer',
+                        marginRight: 8,
+                        background: 'none',
+                        minWidth: 80,
+                      }}
+                    >
+                      Radiation Range
+                    </div>
+                    <div
+                      onClick={() => setActiveSubTab('wind')}
+                      style={{
+                        padding: '6px 0 6px 0',
+                        fontWeight: 600,
+                        fontSize: 15,
+                        borderBottom: activeSubTab === 'wind' ? '2px solid #1976d2' : '2px solid transparent',
+                        color: activeSubTab === 'wind' ? '#1976d2' : '#222',
+                        cursor: 'pointer',
+                        background: 'none',
+                        minWidth: 80,
+                      }}
+                    >
+                      Wind Velocity Range
+                    </div>
+                  </div>
+                  <div style={{ flex: 1, display: 'flex', flexDirection: 'column' }}>
+                    {activeSubTab === 'temperature' ? (
+                      <TemperatureViolinPlot district={popup.district} />
+                    ) : activeSubTab === 'radiation' ? (
+                      <RadiationViolinPlot district={popup.district} />
+                    ) : (
+                      <WindVelocityViolinPlot district={popup.district} />
+                    )}
+                  </div>
+                </>
+              )}
+            </div>
+            {/* Close Button at Bottom */}
+            <button 
+              onClick={() => setPopup({ ...popup, visible: false })}
+              style={{
+                position: 'absolute',
+                right: 16,
+                top: 16,
+                background: 'none',
+                border: 'none',
+                cursor: 'pointer',
+                padding: 8,
+                borderRadius: 4,
+                display: 'flex',
+                alignItems: 'center',
+                justifyContent: 'center',
+                color: '#666',
+              }}
+            >
+              <svg width="16" height="16" viewBox="0 0 16 16" fill="none">
+                <path d="M12.5 3.5L3.5 12.5M3.5 3.5L12.5 12.5" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round"/>
+              </svg>
+            </button>
+          </div>
+        </div>
+      )}
+      {/* Example: always show Ajmer plot for demo */}
+      {/* <TemperatureViolinPlot district="Ajmer" /> */}
     </div>
   );
 }

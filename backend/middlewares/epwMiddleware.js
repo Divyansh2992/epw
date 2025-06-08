@@ -13,4 +13,28 @@ function validateEpwFilename(req, res, next) {
     next();
 }
 
-module.exports = { validateEpwFilename };
+
+// Mapping function: district name to EPW filename
+function getEpwFilenameFromDistrict(district) {
+    // List all files in epw_files directory
+    const epwDir = path.join(__dirname, '../epw_files');
+    const files = fs.readdirSync(epwDir);
+    // Try to find a file that includes the district name (case-insensitive, ignoring spaces)
+    const normalizedDistrict = district.replace(/\s+/g, '').toLowerCase();
+    const match = files.find(f => f.replace(/\s+/g, '').toLowerCase().includes(normalizedDistrict));
+    return match || null;
+}
+
+// Middleware to allow district name as filename
+function resolveEpwByDistrict(req, res, next) {
+    const district = req.params.district;
+    const filename = getEpwFilenameFromDistrict(district);
+    if (!filename) {
+        return res.status(404).json({ error: 'No EPW file found for district: ' + district });
+    }
+    req.epwFilePath = path.join(__dirname, '../epw_files', filename);
+    req.epwResolvedFilename = filename;
+    next();
+}
+
+module.exports = { validateEpwFilename, resolveEpwByDistrict };
