@@ -4,6 +4,8 @@ import IndiaMap from './IndiaMap';
 import TemperatureViolinPlot from './TemperatureViolinPlot';
 import RadiationViolinPlot from './RadiationViolinPlot';
 import WindVelocityViolinPlot from './WindVelocityViolinPlot';
+import GroundTemperatureLinePlot from './GroundTemperatureLinePlot';
+import HourlyColormapPlot from './HourlyColormapPlot';
 
 function App() {
   const [popup, setPopup] = useState({ visible: false, district: '', summary: null });
@@ -27,6 +29,18 @@ function App() {
         setPopup({ visible: true, district, summary: null });
       });
   };
+
+  const subtabStyle = (tab) => ({
+    padding: '6px 24px 6px 0',
+    fontWeight: 600,
+    fontSize: 15,
+    borderBottom: activeSubTab === tab ? '2px solid #1976d2' : '2px solid transparent',
+    color: activeSubTab === tab ? '#1976d2' : '#222',
+    cursor: 'pointer',
+    marginRight: 8,
+    background: 'none',
+    minWidth: 120,
+  });
 
   return (
     <div style={{ position: 'relative', background: '#f5f5f5', minHeight: '100vh', padding: 32 }}>
@@ -53,6 +67,7 @@ function App() {
           zIndex: 1000,
           padding: '32px',
           boxSizing: 'border-box',
+          overflowX: 'hidden',
         }} onClick={() => setPopup({ ...popup, visible: false })}>
           <div style={{
             background: '#fff',
@@ -69,6 +84,7 @@ function App() {
             flexDirection: 'column',
             boxSizing: 'border-box',
             fontSize: 15,
+            overflowX: 'hidden',
           }} onClick={e => e.stopPropagation()}>
             {/* Top Tabs */}
             <div style={{
@@ -114,59 +130,46 @@ function App() {
                   <div style={{ display: 'flex', gap: 0, marginBottom: 12 }}>
                     <div
                       onClick={() => setActiveSubTab('temperature')}
-                      style={{
-                        padding: '6px 24px 6px 0',
-                        fontWeight: 600,
-                        fontSize: 15,
-                        borderBottom: activeSubTab === 'temperature' ? '2px solid #1976d2' : '2px solid transparent',
-                        color: activeSubTab === 'temperature' ? '#1976d2' : '#222',
-                        cursor: 'pointer',
-                        marginRight: 8,
-                        background: 'none',
-                        minWidth: 80,
-                      }}
+                      style={subtabStyle('temperature')}
                     >
                       Temperature Range
                     </div>
                     <div
                       onClick={() => setActiveSubTab('radiation')}
-                      style={{
-                        padding: '6px 24px 6px 0',
-                        fontWeight: 600,
-                        fontSize: 15,
-                        borderBottom: activeSubTab === 'radiation' ? '2px solid #1976d2' : '2px solid transparent',
-                        color: activeSubTab === 'radiation' ? '#1976d2' : '#222',
-                        cursor: 'pointer',
-                        marginRight: 8,
-                        background: 'none',
-                        minWidth: 80,
-                      }}
+                      style={subtabStyle('radiation')}
                     >
                       Radiation Range
                     </div>
                     <div
                       onClick={() => setActiveSubTab('wind')}
-                      style={{
-                        padding: '6px 0 6px 0',
-                        fontWeight: 600,
-                        fontSize: 15,
-                        borderBottom: activeSubTab === 'wind' ? '2px solid #1976d2' : '2px solid transparent',
-                        color: activeSubTab === 'wind' ? '#1976d2' : '#222',
-                        cursor: 'pointer',
-                        background: 'none',
-                        minWidth: 80,
-                      }}
+                      style={subtabStyle('wind')}
                     >
                       Wind Velocity Range
                     </div>
+                    <div
+                      onClick={() => setActiveSubTab('ground')}
+                      style={subtabStyle('ground')}
+                    >
+                      Ground Temperature
+                    </div>
+                    <div
+                      onClick={() => setActiveSubTab('hourlycolormap')}
+                      style={subtabStyle('hourlycolormap')}
+                    >
+                      Hourly Colormap
+                    </div>
                   </div>
-                  <div style={{ flex: 1, display: 'flex', flexDirection: 'column' }}>
+                  <div style={{ flex: 1, display: 'flex', flexDirection: 'column', padding: '6px 0 6px 0', }}>
                     {activeSubTab === 'temperature' ? (
                       <TemperatureViolinPlot district={popup.district} />
                     ) : activeSubTab === 'radiation' ? (
                       <RadiationViolinPlot district={popup.district} />
-                    ) : (
+                    ) : activeSubTab === 'wind' ? (
                       <WindVelocityViolinPlot district={popup.district} />
+                    ) : activeSubTab === 'ground' ? (
+                      <GroundTemperatureLinePlot district={popup.district} />
+                    ) : (
+                      <HourlyColormapPlot district={popup.district} />
                     )}
                   </div>
                 </>

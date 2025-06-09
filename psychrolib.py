@@ -1116,7 +1116,7 @@ def GetMoistAirVolume(TDryBulb: float, HumRatio: float, Pressure: float) -> floa
         Pressure : Atmospheric pressure in Psi [IP] or Pa [SI]
 
     Returns:
-        Specific volume of moist air in ft³ lb⁻¹ of dry air [IP] or in m³ kg⁻¹ of dry air [SI]
+        Specific volume of moist air in ft³ lb⁻¹ [IP] or in m³ kg⁻¹ [SI]
 
     Reference:
         ASHRAE Handbook - Fundamentals (2017) ch. 1 eqn 26
@@ -1371,3 +1371,39 @@ def CalcPsychrometricsFromRelHum(TDryBulb: float, RelHum: float, Pressure: float
     MoistAirVolume = GetMoistAirVolume(TDryBulb, HumRatio, Pressure)
     DegreeOfSaturation = GetDegreeOfSaturation(TDryBulb, HumRatio, Pressure)
     return HumRatio, TWetBulb, TDewPoint, VapPres, MoistAirEnthalpy, MoistAirVolume, DegreeOfSaturation
+
+
+
+if __name__ == "__main__":
+    import sys
+    import json
+    from psychrolib import SetUnitSystem, SI, GetTWetBulbFromRelHum, GetStandardAtmPressure
+
+    # Set unit system first
+    SetUnitSystem(SI)
+
+    # Read input file path from command line
+    input_file = sys.argv[1]
+    output_file = sys.argv[2]
+
+    # Read input data from file
+    with open(input_file, 'r') as f:
+        input_data = json.load(f)
+
+    dryBulb_array = input_data['dryBulb']
+    relHum_array = input_data['relHum']
+    elevation = input_data['elevation']  # Elevation in meters
+
+    # Calculate pressure from elevation
+    pressure = GetStandardAtmPressure(elevation)  # This will be in Pa
+    print(f"Calculated pressure: {pressure} Pa from elevation: {elevation}m")
+    
+    # Calculate wet bulb temperatures for all values
+    wet_bulb_array = []
+    for i in range(len(dryBulb_array)):
+        result = GetTWetBulbFromRelHum(dryBulb_array[i], relHum_array[i], pressure)
+        wet_bulb_array.append(result)
+
+    # Write results to output file
+    with open(output_file, 'w') as f:
+        json.dump({"wet_bulb": wet_bulb_array}, f)
