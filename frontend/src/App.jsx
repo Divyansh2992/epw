@@ -11,6 +11,8 @@ function App() {
   const [popup, setPopup] = useState({ visible: false, district: '', summary: null });
   const [activeTab, setActiveTab] = useState('summary');
   const [activeSubTab, setActiveSubTab] = useState('temperature');
+  const [hoveredDistrict, setHoveredDistrict] = useState(null);
+  const [designConditions, setDesignConditions] = useState(null);
 
   const handleDistrictClick = (district) => {
     fetch(`/api/epw/summary/district/${encodeURIComponent(district)}`)
@@ -30,6 +32,28 @@ function App() {
       });
   };
 
+  const handleDistrictHover = (districtName) => {
+    setHoveredDistrict(districtName);
+    if (districtName) {
+      fetch(`http://localhost:3000/api/epw/design-conditions/${encodeURIComponent(districtName)}`)
+        .then(res => {
+          if (!res.ok) {
+            throw new Error(`HTTP error! status: ${res.status}`);
+          }
+          return res.json();
+        })
+        .then(data => {
+          setDesignConditions(data.designConditions);
+        })
+        .catch(error => {
+          console.error('Error fetching design conditions:', error);
+          setDesignConditions(null);
+        });
+    } else {
+      setDesignConditions(null);
+    }
+  };
+
   const subtabStyle = (tab) => ({
     padding: '6px 24px 6px 0',
     fontWeight: 600,
@@ -43,19 +67,113 @@ function App() {
   });
 
   return (
-    <div style={{ position: 'relative', background: '#f5f5f5', minHeight: '100vh', padding: 32 }}>
-      <IndiaMap onDistrictClick={handleDistrictClick} />
-      <div id="tooltip" style={{
-        position: 'absolute',
-        display: 'none',
-        pointerEvents: 'none',
-        background: 'rgba(0,0,0,0.8)',
-        color: '#fff',
-        padding: '4px 8px',
-        borderRadius: '4px',
-        fontSize: '14px',
-        zIndex: 10
-      }}></div>
+    <div style={{ position: 'relative', background: '#f5f5f5', minHeight: '100vh', padding: 32, display: 'flex' }}>
+      <div style={{ flex: 1, marginRight: 20 }}>
+        <IndiaMap onDistrictClick={handleDistrictClick} onDistrictHover={handleDistrictHover} />
+        <div id="tooltip" style={{
+          position: 'absolute',
+          display: 'none',
+          pointerEvents: 'none',
+          background: 'rgba(0,0,0,0.8)',
+          color: '#fff',
+          padding: '4px 8px',
+          borderRadius: '4px',
+          fontSize: '14px',
+          zIndex: 10
+        }}></div>
+      </div>
+      {/* Right side panel for Design Conditions */}
+      <div style={{ width: 400, background: '#fff', borderRadius: 8, boxShadow: '0 4px 32px rgba(0,0,0,0.2)', padding: 24, minHeight: '80vh', display: 'flex', flexDirection: 'column' }}>
+        <h2 style={{ fontSize: 24, marginBottom: 20, textAlign: 'center' }}>Design Conditions</h2>
+        {hoveredDistrict ? (
+          designConditions ? (
+            <div>
+              <h3 style={{ fontSize: 18, marginBottom: 10, textAlign: 'center' }}>{hoveredDistrict}</h3>
+              {/* Heating Table */}
+              {designConditions.Heating && (
+                <div style={{ marginBottom: 15 }}>
+                  <h4 style={{ fontSize: 16, marginBottom: 8, borderBottom: '1px solid #eee', paddingBottom: 3 }}>Heating</h4>
+                  <table style={{ width: '100%', borderCollapse: 'collapse' }}>
+                    <thead>
+                      <tr>
+                        {Object.keys(designConditions.Heating).map(percentage => (
+                          <th key={percentage} style={{ border: '1px solid #ddd', padding: 5, textAlign: 'left', background: '#f2f2f2', fontSize: 13 }}>{percentage}</th>
+                        ))}
+                      </tr>
+                    </thead>
+                    <tbody>
+                      <tr>
+                        {Object.keys(designConditions.Heating).map(percentage => (
+                          <td key={percentage} style={{ border: '1px solid #ddd', padding: 5, fontSize: 12 }}>
+                            <div style={{ borderBottom: '1px solid #eee', paddingBottom: 3, marginBottom: 3 }}>DBT: {designConditions.Heating[percentage].dryBulb}</div>
+                            <div>WB: {designConditions.Heating[percentage].wetBulb}</div>
+                          </td>
+                        ))}
+                      </tr>
+                    </tbody>
+                  </table>
+                </div>
+              )}
+
+              {/* Cooling Table */}
+              {designConditions.Cooling && (
+                <div style={{ marginBottom: 15 }}>
+                  <h4 style={{ fontSize: 16, marginBottom: 8, borderBottom: '1px solid #eee', paddingBottom: 3 }}>Cooling</h4>
+                  <table style={{ width: '100%', borderCollapse: 'collapse' }}>
+                    <thead>
+                      <tr>
+                        {Object.keys(designConditions.Cooling).map(percentage => (
+                          <th key={percentage} style={{ border: '1px solid #ddd', padding: 5, textAlign: 'left', background: '#f2f2f2', fontSize: 13 }}>{percentage}</th>
+                        ))}
+                      </tr>
+                    </thead>
+                    <tbody>
+                      <tr>
+                        {Object.keys(designConditions.Cooling).map(percentage => (
+                          <td key={percentage} style={{ border: '1px solid #ddd', padding: 5, fontSize: 12 }}>
+                            <div style={{ borderBottom: '1px solid #eee', paddingBottom: 3, marginBottom: 3 }}>DBT: {designConditions.Cooling[percentage].dryBulb}</div>
+                            <div>WB: {designConditions.Cooling[percentage].wetBulb}</div>
+                          </td>
+                        ))}
+                      </tr>
+                    </tbody>
+                  </table>
+                </div>
+              )}
+
+              {/* Evaporation Table */}
+              {designConditions.Evaporation && (
+                <div style={{ marginBottom: 15 }}>
+                  <h4 style={{ fontSize: 16, marginBottom: 8, borderBottom: '1px solid #eee', paddingBottom: 3 }}>Evaporation</h4>
+                  <table style={{ width: '100%', borderCollapse: 'collapse' }}>
+                    <thead>
+                      <tr>
+                        {Object.keys(designConditions.Evaporation).map(percentage => (
+                          <th key={percentage} style={{ border: '1px solid #ddd', padding: 5, textAlign: 'left', background: '#f2f2f2', fontSize: 13 }}>{percentage}</th>
+                        ))}
+                      </tr>
+                    </thead>
+                    <tbody>
+                      <tr>
+                        {Object.keys(designConditions.Evaporation).map(percentage => (
+                          <td key={percentage} style={{ border: '1px solid #ddd', padding: 5, fontSize: 12 }}>
+                            <div style={{ borderBottom: '1px solid #eee', paddingBottom: 3, marginBottom: 3 }}>WB: {designConditions.Evaporation[percentage].wetBulb}</div>
+                            <div>MCDB: {designConditions.Evaporation[percentage].meanCoincidentDryBulb}</div>
+                          </td>
+                        ))}
+                      </tr>
+                    </tbody>
+                  </table>
+                </div>
+              )}
+            </div>
+          ) : (
+            <p style={{ textAlign: 'center', color: '#666' }}>Fetching design conditions for {hoveredDistrict}...</p>
+          )
+        ) : (
+          <p style={{ textAlign: 'center', color: '#666' }}>Hover over a district on the map to see its design conditions.</p>
+        )}
+      </div>
       {popup.visible && (
         <div style={{
           position: 'fixed',

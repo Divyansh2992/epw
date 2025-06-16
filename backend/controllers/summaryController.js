@@ -127,6 +127,7 @@ exports.getEpwSummary = async (req, res) => {
                 dpt_avg: avg(slice(dpt)),
                 rh_avg: avg(slice(rh)),
                 wbt_avg: avg(slice(wbt)),
+                wet_bulb_depression_avg: avg(slice(dbt).map((val, idx) => val - slice(wbt)[idx])),
                 ghi_avg:avg(slice(ghi)),
                 dni_avg:avg(slice(dni)),
                 ghr_avg: avgNonZero(slice(ghr)), 

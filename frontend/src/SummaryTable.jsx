@@ -4,17 +4,18 @@ const months = ['JAN','FEB','MAR','APR','MAY','JUN','JUL','AUG','SEP','OCT','NOV
 
 export default function SummaryTable({ summary, district }) {
   const summaryRows = [
-    { label: 'Global Horizontal Radiation (avg. hr.)', key: 'ghr_avg', unit: 'Wh/sq.m' },
-    { label: 'Direct Normal Radiation (avg. hr.)', key: 'dnr_avg', unit: 'Wh/sq.m' },
-    { label: 'Diffuse Radiation (avg. hr.)', key: 'dhr_avg', unit: 'Wh/sq.m' },
-    { label: 'Global Horizontal Radiation (max. hr.)', key: 'ghr_max', unit: 'Wh/sq.m' },
-    { label: 'Direct Normal Radiation (max. hr.)', key: 'dnr_max', unit: 'Wh/sq.m' },
-    { label: 'Diffuse Radiation (max. hr.)', key: 'dhr_max', unit: 'Wh/sq.m' },
+    { label: 'Global Horizontal Radiation (avg. hr.)', key: 'ghr_avg', unit: 'W/sq.m' },
+    { label: 'Direct Normal Radiation (avg. hr.)', key: 'dnr_avg', unit: 'W/sq.m' },
+    { label: 'Diffuse Radiation (avg. hr.)', key: 'dhr_avg', unit: 'W/sq.m' },
+    { label: 'Global Horizontal Radiation (max. hr.)', key: 'ghr_max', unit: 'W/sq.m' },
+    { label: 'Direct Normal Radiation (max. hr.)', key: 'dnr_max', unit: 'W/sq.m' },
+    { label: 'Diffuse Radiation (max. hr.)', key: 'dhr_max', unit: 'W/sq.m' },
     { label: 'Dry Bulb Temperature (avg. monthly)', key: 'dbt_avg', unit: 'Degree C' },
     { label: 'Dry Bulb Temperature (max.)', key: 'dbt_max', unit: 'Degree C' },
-    { label: 'Relative Humidity (avg. monthly)', key: 'rh_avg', unit: 'Percent' },
+    // { label: 'Relative Humidity (avg. monthly)', key: 'rh_avg', unit: 'Percent' },
     { label: 'Wet Bulb Temperature (avg. monthly)', key: 'wbt_avg', unit: 'Degree C' },
     { label: 'Dew Point Temperature (avg. monthly)', key: 'dpt_avg', unit: 'Degree C' },
+    { label: 'Wet Bulb Depression (avg. monthly)', key: 'wet_bulb_depression_avg', unit: 'Degree C' },
     { label: 'Global Horizontal Illumination (avg. hr.)', key: 'ghi_avg', unit: 'Lux' },
     { label: 'Direct Normal Illumination (avg. hr.)', key: 'dni_avg', unit: 'Lux' },
   ];
